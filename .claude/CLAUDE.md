@@ -1,94 +1,35 @@
-# プロジェクト設定
+# プロジェクト設定：トワイライト・タロット運用システム
 
-## スタック
+## 概要
 
-このプロジェクトは以下のスタックで構築します：
+スマホ1台で「タロット占い副業」を運用するための仕組み一式。集客〜鑑定〜顧客管理を最小の手間で回し、無料鑑定から有料鑑定・リピートにつなげる。詳細は `docs/タロット運用システム仕様書.md` を参照。
 
-- **フレームワーク**: Next.js 15 (App Router)
-- **データベース**: Supabase (PostgreSQL)
-- **認証**: NextAuth.js v5 + Google OAuth
-- **ストレージ**: Cloudflare R2
-- **決済**: Stripe
-- **デプロイ**: Vercel
-- **バージョン管理**: GitHub
+利用者は運営者本人1名（自分専用ツール）。**ビルド・DB・認証・決済は一切使わない。**
 
-## 利用可能な MCP ツール
+## 構成
 
-| サービス | MCP | 用途 |
-|---------|-----|------|
-| Supabase | `mcp__supabase__*` | DB操作・マイグレーション・Edge Functions |
-| Cloudflare | `mcp__cloudflare__*` | R2ストレージ・Workers |
-| Stripe | `mcp__stripe__*` | 商品・価格・サブスクリプション管理 |
-| GitHub | `mcp__github__*` | リポジトリ・PR・Issue管理 |
-| Vercel | `mcp__vercel__*` | デプロイ・環境変数管理 |
-| Gemini | `mcp__gemini__*` | AI機能 |
+| # | フォルダ／ファイル | 形態 | 役割 |
+|---|---|---|---|
+| A | `dashboard/tarot-studio.html` | 単一HTMLファイル（フレームワーク・ビルド不要） | カードを引く／投稿・鑑定の指示づくり／顧客・売上管理／ブランド設定 |
+| B | `prompts/claude-鑑定プロジェクト指示文.md` | Claudeプロジェクトに登録する指示文 | 鑑定文の生成 |
+| C | `prompts/chatgpt-投稿画像GPT指示文.md` | ChatGPT Custom GPTに登録する指示文 | Threads投稿文・画像の生成 |
+| D | `templates/DM初回返信テンプレ.md` | Markdownドキュメント | 申し込み〜鑑定結果〜有料誘導のDM文面集 |
+| — | `docs/タロット運用システム仕様書.md` | 仕様書 | システム全体の設計・仕様（一次情報） |
 
-## 自動セットアップ手順
+## 技術仕様（ダッシュボード）
 
-このプロジェクトが空の場合、以下の手順で初期化を行います：
+- 実装：HTML / CSS / JavaScriptのみ。フレームワーク・ビルド・パッケージ管理は使わない。
+- データ保存：ブラウザの `localStorage`（端末ローカル・本人のみ、外部通信なし）
+- 起動：`dashboard/tarot-studio.html` をブラウザで直接開くだけ
+- デザイン：深いプラム×アンティークゴールド。見出し=Shippori Mincho、本文=Zen Kaku Gothic New
 
-1. `npx create-next-app@latest . --typescript --tailwind --app --src-dir --import-alias "@/*"` を実行
-2. 必要なパッケージをインストール:
-   - `@supabase/supabase-js @supabase/ssr`
-   - `next-auth@beta @auth/supabase-adapter`
-   - `@aws-sdk/client-s3` (R2アクセス用)
-   - `stripe @stripe/stripe-js`
-3. Supabase プロジェクトをMCPで作成・設定
-4. GitHub リポジトリをMCPで作成・接続
-5. Vercel プロジェクトをMCPで作成・設定
-6. 環境変数ファイル (`.env.local`) を生成
-7. Stripe 商品・価格をMCPで設定
+`dashboard/tarot-studio.html` を編集する際は、単一ファイル構成を崩さない（外部ビルドツールやフレームワーク導入を提案しない）こと。
 
-## 環境変数テンプレート
+## 編集時の注意
 
-```.env.local
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+- `prompts/` `templates/` の指示文・テンプレは、この副業のブランドボイス・マーケティング設計（無料鑑定で信頼構築→根本課題の提示→有料誘導）の一次資料。文面を変更する際は仕様書の「7. マーケティング設計」「9. 安全・コンプライアンス方針」との整合性を確認する。
+- 誇大表現・断定的な保証（「必ず復縁する」等）はしない。深刻な悩みのサインが見えた場合は専門家・相談窓口への誘導を促す文面にする。
 
-# NextAuth / Google OAuth
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
+## コミット・PR規約
 
-# Cloudflare R2
-CLOUDFLARE_ACCOUNT_ID=
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_BUCKET_NAME=
-R2_PUBLIC_URL=
-
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-
-# Gemini API
-GEMINI_API_KEY=
-
-# Vercel
-VERCEL_TOKEN=
-```
-
-## コーディング規約
-
-- TypeScript strict モード
-- Tailwind CSS でスタイリング
-- Server Components を優先、Client Components は最小限
-- Supabase の RLS (Row Level Security) を必ず有効化
-- API キーは環境変数で管理、コードに埋め込み禁止
-- エラーハンドリングは Result 型パターンを推奨
-
-## MCPを使った開発フロー
-
-```
-ユーザー要求
-  → GitHub MCP でブランチ作成
-  → コード実装
-  → Supabase MCP でマイグレーション適用
-  → GitHub MCP でPR作成
-  → Vercel MCP でプレビューデプロイ確認
-  → マージ → 本番デプロイ
-```
+- コミットメッセージは日本語OK、変更内容を簡潔に
